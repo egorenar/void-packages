@@ -1,0 +1,34 @@
+# Template file for 'snd-hda-macbookpro-dkms'
+pkgname=snd-hda-macbookpro-dkms
+version=1.0.0
+revision=1
+_commit=be0d51009b4f9f52ae01592f3878835bcb21c93a
+_linux_version=5.9.12
+wrksrc="snd_hda_macbookpro-${_commit}"
+short_desc="Kernel driver for sound on Macs with Cirrus 8409 HDA chips"
+maintainer="Alexander Egorenkov <egorenar-dev@posteo.net>"
+license="GPL-2.0-or-later"
+homepage="https://github.com/egorenar/snd_hda_macbookpro"
+distfiles="
+ https://github.com/egorenar/snd_hda_macbookpro/archive/${_commit}.tar.gz
+ ${KERNEL_SITE}/kernel/v5.x/linux-${_linux_version}.tar.xz"
+checksum="
+ a9a21e90e99ec17ed4eb4b77cd317174ee6c44147a462adce706a4cfc007a33e
+ d97f56192e3474c9c8a44ca39957d51800a26497c9a13c9c5e8cc0f1f5b0d9bd"
+
+dkms_modules="snd-hda-macbookpro ${version}"
+depends="dkms"
+
+do_install() {
+	vmkdir usr/src/snd-hda-macbookpro-${version}
+	vcopy "../linux-${_linux_version}/sound/pci/hda/*" usr/src/snd-hda-macbookpro-${version}
+	vcopy "${wrksrc}/patch_cirrus/*" usr/src/snd-hda-macbookpro-${version}
+
+	sed -i 's/timespec/timespec64/' ${PKGDESTDIR}/usr/src/snd-hda-macbookpro-${version}/patch_cirrus.c
+	sed -i 's/timespec/timespec64/' ${PKGDESTDIR}/usr/src/snd-hda-macbookpro-${version}/patch_cirrus_new84.h
+	sed -i 's/getnstimeofday/ktime_get_real_ts64/' ${PKGDESTDIR}/usr/src/snd-hda-macbookpro-${version}/patch_cirrus.c
+	sed -i 's/getnstimeofday/ktime_get_real_ts64/' ${PKGDESTDIR}/usr/src/snd-hda-macbookpro-${version}/patch_cirrus_new84.h
+	sed -i 's/event = snd_hda_jack_tbl_get_from_tag(codec, tag);/event = snd_hda_jack_tbl_get_from_tag(codec, tag, 0);/' ${PKGDESTDIR}/usr/src/snd-hda-macbookpro-${version}/patch_cirrus.c
+
+	vcopy ${FILESDIR}/dkms.conf usr/src/snd-hda-macbookpro-${version}
+}
